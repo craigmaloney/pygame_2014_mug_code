@@ -12,6 +12,8 @@ def main():
     # Every Pygame program has the following:
     pygame.init()
     screen = pygame.display.set_mode(SCREENRECT.size, DOUBLEBUF | HWSURFACE)
+
+    # All games are essentially one giant loop
     while True:
         for event in pygame.event.get():
             if event.type == QUIT:
