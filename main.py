@@ -8,6 +8,12 @@ from pygame.locals import QUIT
 SCREENRECT = pygame.Rect(0, 0, 800, 600)
 
 
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+       self.x = x
+       self.y = y
+
+
 def main():
     # Every Pygame program has the following:
     pygame.init()
