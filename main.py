@@ -4,6 +4,7 @@ import pygame
 from pygame.locals import DOUBLEBUF
 from pygame.locals import HWSURFACE
 from pygame.locals import QUIT
+from pygame.locals import SRCALPHA
 
 SCREENRECT = pygame.Rect(0, 0, 800, 600)
 FPS = 30
@@ -19,7 +20,7 @@ class Bomb(pygame.sprite.Sprite):
         self.bomb_size = 24
         self.half_bomb_size = self.bomb_size / 2
         pygame.sprite.Sprite.__init__(self, self.containers)
-        self.image = pygame.Surface((25, 25))
+        self.image = pygame.Surface((self.bomb_size, self.bomb_size), SRCALPHA)
         pygame.draw.circle(
             self.image,
             LIGHT_GRAY,
