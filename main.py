@@ -53,10 +53,10 @@ class Bomber(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
         # AKA the level
-        self.madness = 40
+        self.madness = 2
+        self.num_bombs = self.set_num_bombs()
         self.speed = 2 * (self.madness / 2)
         self.bomb_rate_miliseconds = self.set_bomb_rate_miliseconds()
-        self.num_bombs = 10
         self.dx = self.speed
         self.dropping_bombs = False
         self.change_direction()
@@ -67,14 +67,17 @@ class Bomber(pygame.sprite.Sprite):
             brms = 50
         return brms
 
+    def set_num_bombs(self):
+        return self.madness * 5
+
     def update(self):
         if self.dropping_bombs:
             self.x += self.dx
-            if self.x > SCREENRECT.size[0]:
-                self.x = SCREENRECT.size[0]
+            if self.x > SCREENRECT.size[0] - 50:
+                self.x = SCREENRECT.size[0] - 50
                 self.dx *= -1
-            if self.x < 0:
-                self.x = 0
+            if self.x < 50:
+                self.x = 50
                 self.dx *= -1
         self.rect.center = (self.x, self.y)
 
@@ -93,13 +96,12 @@ class Bomber(pygame.sprite.Sprite):
             self.set_bomber_timer(0)
 
     def change_direction(self):
-        if self.num_bombs > 0:
-            new_direction = random.randint(-1, 1)
-            if new_direction != 0:
-                self.dx = new_direction * self.speed
-                pygame.time.set_timer(
-                    CHANGE_DIRECTION,
-                    int(self.bomb_rate_miliseconds))
+        new_direction = random.randint(-1, 1)
+        if new_direction != 0:
+            self.dx = new_direction * self.speed
+            pygame.time.set_timer(
+                CHANGE_DIRECTION,
+                int(self.bomb_rate_miliseconds))
 
 
 def main():
