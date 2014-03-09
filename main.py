@@ -11,7 +11,7 @@ from pygame.locals import K_SPACE
 from pygame.locals import KEYDOWN
 
 SCREENRECT = pygame.Rect(0, 0, 800, 600)
-FPS = 30
+FPS = 60
 AQUA = (0, 255, 255)
 LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (20, 20, 20)
@@ -24,7 +24,7 @@ class Floor(pygame.sprite.Sprite):
         self.x = 0
         self.y = SCREENRECT.size[1]
         pygame.sprite.Sprite.__init__(self, self.containers)
-        self.image = pygame.Surface((SCREENRECT.size[0], 1), SRCALPHA)
+        self.image = pygame.Surface((SCREENRECT.size[0], 100), SRCALPHA)
         self.image.fill(LIGHT_GRAY)
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.x, self.y)
@@ -54,6 +54,8 @@ class Bomb(pygame.sprite.Sprite):
     def update(self):
         self.y += self.speed
         self.rect.center = (self.x, self.y)
+        if self.y >= SCREENRECT.size[1]:
+            self.explode()
 
     def explode(self):
         # Have a magnificent explosion here
@@ -82,18 +84,18 @@ class Bomber(pygame.sprite.Sprite):
     def reset_level(self):
         self.num_bombs = self.set_num_bombs()
         self.alive_bombs = self.num_bombs
-        self.speed = 2 * (self.madness / 2)
+        self.speed = (self.madness / 2)
         self.bomb_rate_miliseconds = self.set_bomb_rate_miliseconds()
-        self.dx = self.speed * 2
+        self.dx = self.speed
         self.dropping_bombs = False
         self.change_direction()
         self.set_bomber_timer(int(self.bomb_rate_miliseconds))
         print "Starting game"
 
     def set_bomb_rate_miliseconds(self):
-        brms = 1500 - (self.madness * 100)
+        brms = 1500 - (self.madness * 200)
         if brms <= 0:
-            brms = 50
+            brms = 100
         return brms
 
     def set_num_bombs(self):
@@ -134,11 +136,14 @@ class Bomber(pygame.sprite.Sprite):
                 CHANGE_DIRECTION,
                 int(self.bomb_rate_miliseconds / 2))
 
-    def bomb_explode(self):
+    def bomb_destroy(self):
         self.alive_bombs -= 1
         if self.alive_bombs <= 0:
             self.madness += 1
             self.reset_level()
+
+    def bomb_explode(self):
+        self.dropping_bombs = False
 
 
 def main():
