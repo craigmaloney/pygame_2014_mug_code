@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import sys
 import pygame
+import random
 from pygame.locals import DOUBLEBUF
 from pygame.locals import HWSURFACE
 from pygame.locals import QUIT
@@ -13,6 +14,7 @@ AQUA = (0, 255, 255)
 LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (20, 20, 20)
 DROP_BOMB = USEREVENT
+CHANGE_DIRECTION = USEREVENT + 1
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -51,20 +53,30 @@ class Bomber(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
         # AKA the level
-        self.madness = 1
-        self.speed = 2 * self.madness
-        self.bomb_rate_miliseconds = 2000
+        self.madness = 40
+        self.speed = 2 * (self.madness / 2)
+        self.bomb_rate_miliseconds = self.set_bomb_rate_miliseconds()
         self.num_bombs = 10
+        self.dx = self.speed
+        self.dropping_bombs = False
+        self.change_direction()
 
     def set_bomb_rate_miliseconds(self):
         brms = 2000 - (self.madness * 60)
         if brms <= 0:
-            brms = 10
-            return brms
+            brms = 50
+        return brms
 
     def update(self):
+        if self.dropping_bombs:
+            self.x += self.dx
+            if self.x > SCREENRECT.size[0]:
+                self.x = SCREENRECT.size[0]
+                self.dx *= -1
+            if self.x < 0:
+                self.x = 0
+                self.dx *= -1
         self.rect.center = (self.x, self.y)
-        pass
 
     def set_bomber_timer(self, rate):
         print self.bomb_rate_miliseconds
@@ -74,9 +86,20 @@ class Bomber(pygame.sprite.Sprite):
         Bomb(self.x, self.y, self.speed)
         self.num_bombs = self.num_bombs - 1
         if self.num_bombs > 0:
+            self.dropping_bombs = True
             self.set_bomber_timer(int(self.bomb_rate_miliseconds))
         else:
+            self.dropping_bombs = False
             self.set_bomber_timer(0)
+
+    def change_direction(self):
+        if self.num_bombs > 0:
+            new_direction = random.randint(-1, 1)
+            if new_direction != 0:
+                self.dx = new_direction * self.speed
+                pygame.time.set_timer(
+                    CHANGE_DIRECTION,
+                    int(self.bomb_rate_miliseconds))
 
 
 def main():
@@ -109,6 +132,8 @@ def main():
                 sys.exit()
             if event.type == DROP_BOMB:
                 bomber.drop_bomb()
+            if event.type == CHANGE_DIRECTION:
+                bomber.change_direction()
 
         all.clear(screen, background)
         all.update()
