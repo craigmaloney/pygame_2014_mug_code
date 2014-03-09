@@ -12,9 +12,10 @@ LIGHT_GRAY = (200, 200, 200)
 
 
 class Bomb(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, speed):
         self.x = x
         self.y = y
+        self.speed = speed
         self.bomb_size = 24
         self.half_bomb_size = self.bomb_size / 2
         pygame.sprite.Sprite.__init__(self, self.containers)
@@ -29,8 +30,8 @@ class Bomb(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
     def update(self):
-        print "update"
-        pass
+        self.y += self.speed
+        self.rect.center = (self.x, self.y)
 
 
 def main():
@@ -43,13 +44,14 @@ def main():
     background.fill(AQUA)
 
     screen.blit(background, (0, 0))
+    pygame.display.flip()
 
     # Sprites
     all = pygame.sprite.OrderedUpdates()
     bomb = pygame.sprite.Group()
     Bomb.containers = all, bomb
 
-    Bomb(40, 40)
+    Bomb(40, 40,  3)
     # All games are essentially one giant loop
     while True:
         for event in pygame.event.get():
