@@ -7,6 +7,8 @@ from pygame.locals import HWSURFACE
 from pygame.locals import QUIT
 from pygame.locals import SRCALPHA
 from pygame.locals import USEREVENT
+from pygame.locals import K_SPACE
+from pygame.locals import KEYDOWN
 
 SCREENRECT = pygame.Rect(0, 0, 800, 600)
 FPS = 30
@@ -15,6 +17,20 @@ LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (20, 20, 20)
 DROP_BOMB = USEREVENT
 CHANGE_DIRECTION = USEREVENT + 1
+
+
+class Floor(pygame.sprite.Sprite):
+    def __init__(self):
+        self.x = 0
+        self.y = SCREENRECT.size[1]
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = pygame.Surface((SCREENRECT.size[0], 1), SRCALPHA)
+        self.image.fill(LIGHT_GRAY)
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (self.x, self.y)
+
+    def update(self):
+        pass
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -39,6 +55,10 @@ class Bomb(pygame.sprite.Sprite):
         self.y += self.speed
         self.rect.center = (self.x, self.y)
 
+    def explode(self):
+        # Have a magnificent explosion here
+        self.kill()
+
 
 class Bomber(pygame.sprite.Sprite):
     def __init__(self):
@@ -51,18 +71,27 @@ class Bomber(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
-
-        # AKA the level
         self.madness = 2
+        self.alive_bombs = 0
+        self.dropping_bombs = False
+
+    def reset_game(self):
+        self.madness = 2
+        self.reset_level()
+
+    def reset_level(self):
         self.num_bombs = self.set_num_bombs()
+        self.alive_bombs = self.num_bombs
         self.speed = 2 * (self.madness / 2)
         self.bomb_rate_miliseconds = self.set_bomb_rate_miliseconds()
-        self.dx = self.speed
+        self.dx = self.speed * 2
         self.dropping_bombs = False
         self.change_direction()
+        self.set_bomber_timer(int(self.bomb_rate_miliseconds))
+        print "Starting game"
 
     def set_bomb_rate_miliseconds(self):
-        brms = 2000 - (self.madness * 60)
+        brms = 1500 - (self.madness * 100)
         if brms <= 0:
             brms = 50
         return brms
@@ -82,7 +111,6 @@ class Bomber(pygame.sprite.Sprite):
         self.rect.center = (self.x, self.y)
 
     def set_bomber_timer(self, rate):
-        print self.bomb_rate_miliseconds
         pygame.time.set_timer(DROP_BOMB, rate)
 
     def drop_bomb(self):
@@ -101,7 +129,16 @@ class Bomber(pygame.sprite.Sprite):
             self.dx = new_direction * self.speed
             pygame.time.set_timer(
                 CHANGE_DIRECTION,
-                int(self.bomb_rate_miliseconds))
+                0)
+            pygame.time.set_timer(
+                CHANGE_DIRECTION,
+                int(self.bomb_rate_miliseconds / 2))
+
+    def bomb_explode(self):
+        self.alive_bombs -= 1
+        if self.alive_bombs <= 0:
+            self.madness += 1
+            self.reset_level()
 
 
 def main():
@@ -120,11 +157,14 @@ def main():
     all = pygame.sprite.OrderedUpdates()
     bomb = pygame.sprite.Group()
     bomber = pygame.sprite.Group()
+    floor = pygame.sprite.Group()
     Bomb.containers = all, bomb
     Bomber.containers = all, bomber
+    Floor.containers = all, floor
 
-    bomber = Bomber()
-    bomber.set_bomber_timer(3000)
+    bomber_sprite = Bomber()
+    floor_sprite = Floor()
+    game_running = False
 
     # All games are essentially one giant loop
     while True:
@@ -133,9 +173,23 @@ def main():
                 pygame.quit
                 sys.exit()
             if event.type == DROP_BOMB:
-                bomber.drop_bomb()
+                bomber_sprite.drop_bomb()
             if event.type == CHANGE_DIRECTION:
-                bomber.change_direction()
+                bomber_sprite.change_direction()
+            if not game_running and \
+                    (event.type == KEYDOWN and event.key == K_SPACE):
+                game_running = True
+                bomber_sprite.reset_game()
+
+        bomb_floor = pygame.sprite.groupcollide(
+            bomb,
+            floor,
+            False,
+            False)
+        if bomb_floor:
+            bomber_sprite.bomb_explode()
+            for floor_bomb in bomb_floor:
+                floor_bomb.explode()
 
         all.clear(screen, background)
         all.update()
