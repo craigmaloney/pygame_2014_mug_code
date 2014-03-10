@@ -14,6 +14,7 @@ SCREENRECT = pygame.Rect(0, 0, 800, 600)
 FPS = 60
 AQUA = (0, 255, 255)
 LIGHT_GRAY = (200, 200, 200)
+EXPLOSION = (250, 150, 200)
 TRANSPARENT_FLOOR = (0, 0, 0, 0)
 DARK_GRAY = (20, 20, 20)
 DROP_BOMB = USEREVENT
@@ -36,11 +37,37 @@ class Floor(pygame.sprite.Sprite):
         self.y -= self.speed
         self.rect.topleft = (self.x, self.y)
         if self.y <= 0:
+            GrandExplosion()
             self.y = SCREENRECT.size[1]
             self.speed = 0
 
     def explode_bombs(self):
         self.speed = 3
+
+
+class GrandExplosion(pygame.sprite.Sprite):
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        pygame.sprite.Sprite.__init__(self, self.containers)
+        self.image = pygame.Surface((SCREENRECT.width, SCREENRECT.height), SRCALPHA)
+        self.image.fill(EXPLOSION)
+        self.image.convert()
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (self.x, self.y)
+        self.toggle = False
+        self.alpha = 200
+
+    def update(self):
+        if self.toggle:
+            self.image.fill(EXPLOSION)
+        else:
+            self.image.fill(DARK_GRAY)
+        self.image.set_alpha(self.alpha)
+        self.toggle = not(self.toggle)
+        self.alpha = self.alpha - 20
+        if self.alpha <= 0:
+            self.kill()
 
 
 class Bomb(pygame.sprite.Sprite):
@@ -160,8 +187,10 @@ class Bomber(pygame.sprite.Sprite):
             self.next_level()
 
     def next_level(self):
-            self.madness += 1
-            self.reset_level()
+        self.alive_bombs = 0
+        self.num_bombs = 0
+        self.madness += 1
+        self.reset_level()
 
     def bomb_explode(self):
         # Muhahahaha! Got you! Stop everything!
@@ -174,8 +203,8 @@ class Bomber(pygame.sprite.Sprite):
             self.alive_bombs = 0
             pygame.time.set_timer(DROP_BOMB, 0)
             pygame.time.set_timer(CHANGE_DIRECTION, 0)
-            # Wait 5 seconds for the bombs to be cleared
-            pygame.time.set_timer(WAIT_EXPLOSION, 5 * 1000)
+            # Wait 7 seconds for the bombs to be cleared
+            pygame.time.set_timer(WAIT_EXPLOSION, 7 * 1000)
 
     def previous_level(self):
         print "Previous level"
@@ -224,10 +253,12 @@ def main():
     bomber = pygame.sprite.Group()
     floor = pygame.sprite.Group()
     player = pygame.sprite.Group()
+    grandexplosion = pygame.sprite.Group()
     Bomb.containers = all, bomb
     Bomber.containers = all, bomber
     Floor.containers = all, floor
     Player.containers = all, player
+    GrandExplosion.containers = all, grandexplosion
 
     bomber_sprite = Bomber()
     floor_sprite = Floor()
@@ -250,6 +281,10 @@ def main():
                 bomber_sprite.previous_level()
                 player_sprite[0].kill()
                 player_sprite.pop(0)
+                if len(player_sprite) < 1:
+                    game_running = False
+                    pygame.quit
+                    sys.exit()
             if not game_running and \
                     (event.type == KEYDOWN and event.key == K_SPACE):
                 game_running = True
