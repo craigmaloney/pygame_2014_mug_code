@@ -67,6 +67,10 @@ class Bomb(pygame.sprite.Sprite):
         if self.y >= SCREENRECT.size[1]:
             self.explode()
 
+    def diffuse(self):
+        # Diffuse action goes here
+        self.kill()
+
     def explode(self):
         # Have a magnificent explosion here
         self.kill()
@@ -150,7 +154,7 @@ class Bomber(pygame.sprite.Sprite):
                 CHANGE_DIRECTION,
                 int(self.bomb_rate_miliseconds / 2))
 
-    def bomb_destroy(self):
+    def bomb_diffuse(self):
         self.alive_bombs -= 1
         if self.alive_bombs <= 0:
             self.next_level()
@@ -184,6 +188,24 @@ class Bomber(pygame.sprite.Sprite):
         self.reset_level()
 
 
+class Player(pygame.sprite.Sprite):
+    def __init__(self, y):
+        self.x = 400
+        self.y = y
+        pygame.sprite.Sprite.__init__(self, self.containers)
+
+        self.image = pygame.Surface((100, 20))
+        self.image.fill(DARK_GRAY)
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+    def update(self):
+        x, y = pygame.mouse.get_pos()
+        self.x = min(max(x, 50), SCREENRECT.width - 50)
+        self.rect.center = (self.x, self.y)
+
+
 def main():
     # Every Pygame program has the following:
     pygame.init()
@@ -201,12 +223,17 @@ def main():
     bomb = pygame.sprite.Group()
     bomber = pygame.sprite.Group()
     floor = pygame.sprite.Group()
+    player = pygame.sprite.Group()
     Bomb.containers = all, bomb
     Bomber.containers = all, bomber
     Floor.containers = all, floor
+    Player.containers = all, player
 
     bomber_sprite = Bomber()
     floor_sprite = Floor()
+    player_sprite = []
+    for y in range(450, 600, 50):
+        player_sprite.append(Player(y))
     game_running = False
 
     # All games are essentially one giant loop
@@ -221,6 +248,8 @@ def main():
                 bomber_sprite.change_direction()
             if event.type == WAIT_EXPLOSION:
                 bomber_sprite.previous_level()
+                player_sprite[0].kill()
+                player_sprite.pop(0)
             if not game_running and \
                     (event.type == KEYDOWN and event.key == K_SPACE):
                 game_running = True
@@ -239,6 +268,16 @@ def main():
                 bomb_sprite.stop_falling()
             for floor_bomb in bomb_floor:
                 floor_bomb.explode()
+
+        bomb_player = pygame.sprite.groupcollide(
+            bomb,
+            player,
+            False,
+            False)
+        if bomb_player:
+            for bomb_sprite in bomb_player:
+                bomb_sprite.diffuse()
+                bomber_sprite.bomb_diffuse()
 
         all.clear(screen, background)
         all.update()
