@@ -14,6 +14,7 @@ SCREENRECT = pygame.Rect(0, 0, 800, 600)
 FPS = 60
 AQUA = (0, 255, 255)
 LIGHT_GRAY = (200, 200, 200)
+TRANSPARENT_FLOOR = (0, 0, 0, 0)
 DARK_GRAY = (20, 20, 20)
 DROP_BOMB = USEREVENT
 CHANGE_DIRECTION = USEREVENT + 1
@@ -26,7 +27,7 @@ class Floor(pygame.sprite.Sprite):
         self.y = SCREENRECT.size[1]
         pygame.sprite.Sprite.__init__(self, self.containers)
         self.image = pygame.Surface((SCREENRECT.size[0], 100), SRCALPHA)
-        self.image.fill(LIGHT_GRAY)
+        self.image.fill(TRANSPARENT_FLOOR)
         self.rect = self.image.get_rect()
         self.rect.topleft = (self.x, self.y)
         self.speed = 0
